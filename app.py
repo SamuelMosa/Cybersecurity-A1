@@ -181,7 +181,7 @@ def upload_gui():
     del tokens[token]
     save_tokens(tokens)
 
-    return render_template_string(TEMPLATE, message=f"Datei erfolgreich hochgeladen und gespeichert als {transaction_id}.bin")
+    return render_template_string(TEMPLATE, message=f"")
 
 # --- Original API Endpoints (ohne GUI) ---
 
