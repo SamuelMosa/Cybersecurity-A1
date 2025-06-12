@@ -23,7 +23,6 @@ for i in range(NUM_KEYS):
     with open(os.path.join(PRIVATE_KEY_DIR, f"{key_id}_private.pem"), "wb") as f:
         f.write(private_key_pem)
 
-# Save public keys to JSON for server use
 with open(PUBLIC_KEY_FILE, "w") as f:
     json.dump(public_keys, f, indent=2)
 

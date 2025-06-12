@@ -23,8 +23,6 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# -- Hilfsfunktionen zum Laden/Speichern von Keys und Tokens --
-
 def load_public_keys():
     if os.path.exists(KEY_DB):
         with open(KEY_DB, 'r') as f:
@@ -48,7 +46,6 @@ def save_tokens(tokens):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# PDF-Metadaten entfernen
 def strip_pdf_metadata(data):
     reader = PdfReader(io.BytesIO(data))
     writer = PdfWriter()
@@ -58,7 +55,6 @@ def strip_pdf_metadata(data):
     writer.write(output)
     return output.getvalue()
 
-# Verschlüsseln mit AES + RSA
 def encrypt_file(file_data, pub_key_pem):
     aes_key = get_random_bytes(32)
     cipher_aes = AES.new(aes_key, AES.MODE_GCM)
@@ -86,8 +82,6 @@ def requires_auth(f):
             return authenticate()
         return f(*args, **kwargs)
     return decorated
-
-# -- HTML Template für GUI --
 
 TEMPLATE = """
 <!DOCTYPE html>
@@ -125,8 +119,6 @@ TEMPLATE = """
 </body>
 </html>
 """
-
-# -- Flask Routes --
 
 @app.route('/', methods=['GET'])
 def index():
@@ -175,15 +167,12 @@ def upload_gui():
         f_key.write(enc_key)
 
 
-    # Schlüssel und Token verbrauchen
     del public_keys[key_id]
     save_public_keys(public_keys)
     del tokens[token]
     save_tokens(tokens)
 
     return render_template_string(TEMPLATE, message=f"")
-
-# --- Original API Endpoints (ohne GUI) ---
 
 @app.route('/upload/<token>', methods=['POST'])
 def upload(token):
@@ -231,18 +220,16 @@ def request_token():
     save_tokens(tokens)
     return token, 200
 
-# Routes for journalist
 @app.route('/files', methods=['GET'])
 @requires_auth
 def list_files():
-    # Suche alle .bin Dateien im Upload-Ordner
     files = [f for f in os.listdir(UPLOAD_FOLDER) if f.endswith('.bin')]
     html = """
     <h1>Verfügbare Dateien zum Download</h1>
     <ul>
     """
     for f in files:
-        base = f[:-4]  # z.B. "abc123.bin" -> "abc123"
+        base = f[:-4]
         file_url = f"/download/{f}"
         key_url = f"/download_key/{base}.key"
         html += f"""
@@ -263,7 +250,6 @@ def download_file(filename):
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     if not os.path.exists(filepath):
         return "Datei nicht gefunden.", 404
-    # Hinweis mitgeben, welcher private Schlüssel nötig ist (Text in Header)
     response = send_file(filepath, as_attachment=True)
     response.headers['X-Private-Key-Hinweis'] = PRIVATE_KEY_INFO
     return response
@@ -275,7 +261,6 @@ def download_key(filename):
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     if not os.path.exists(filepath):
         return "Schlüssel-Datei nicht gefunden.", 404
-    # Hinweis im Header
     response = send_file(filepath, as_attachment=True)
     response.headers['X-Private-Key-Hinweis'] = PRIVATE_KEY_INFO
     return response
